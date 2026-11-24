@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knock Back</title>
+<style>
+:root{
+  --bg:#17130f; --panel:#221c16; --panel2:#2b241c; --line:#4a3f31; --ink:#efe6d6; --dim:#a89a84;
+  --faint:#75695a; --warm:#e0a34a; --ember:#d9663a; --cool:#7fb0a8; --paper:#f1e7d2; --paperink:#2a2219;
+  --sign:#c9b458;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 Georgia,'Times New Roman',serif}
+button,select,input,textarea{font:inherit;color:inherit}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 22px;padding:14px 20px;border-bottom:1px solid var(--line);background:#1c1712}
+h1{margin:0;font-size:26px;letter-spacing:.06em;font-weight:400}
+h1 small{font-size:13px;color:var(--dim);letter-spacing:.02em;margin-left:10px}
+.run{font-family:Menlo,Consolas,monospace;font-size:15px;color:var(--warm);letter-spacing:.14em}
+.run b{font-weight:400;color:var(--dim);letter-spacing:.02em;font-family:Georgia,serif;margin-right:6px}
+.again{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:13px;color:var(--dim)}
+.again input{width:92px;background:#120f0c;border:1px solid var(--line);padding:5px 8px;font-family:Menlo,Consolas,monospace;letter-spacing:.12em;text-transform:uppercase}
+.btn{background:var(--panel2);border:1px solid var(--line);padding:6px 14px;border-radius:3px;cursor:pointer}
+.btn:hover:not(:disabled){border-color:var(--warm)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.hot{background:#3a2a17;border-color:var(--warm)}
+main{display:grid;grid-template-columns:minmax(0,1fr) 168px;gap:18px;padding:18px 20px 40px;max-width:1240px;margin:0 auto}
+.how{grid-column:1/-1;color:var(--dim);font-size:14px;border-left:3px solid var(--line);padding:2px 0 2px 12px;max-width:900px}
+.how b{color:var(--ink);font-weight:400}
+.board{display:flex;flex-direction:column;gap:14px;min-width:0}
+.strip{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:12px 14px 14px}
+.strip.sgn{border-color:var(--sign);box-shadow:inset 0 0 0 1px rgba(201,180,88,.25)}
+.shead{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.shead h2{margin:0;font-size:17px;letter-spacing:.16em;font-weight:400}
+.shead .tag{font-size:12px;color:var(--sign);letter-spacing:.1em;font-style:italic}
+.shead .btn{margin-left:auto;font-size:13px;padding:3px 12px}
+.card{font-size:13px;color:var(--dim);margin:0 0 10px;max-width:820px}
+.cells{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.cell{background:#120f0c;border:1px solid var(--line);border-radius:3px;min-height:86px;padding:6px 4px 5px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:space-between;width:100%}
+.cell .hr{font-size:12px;color:var(--faint);letter-spacing:.08em}
+.cell .v{font-family:Menlo,Consolas,monospace;font-size:24px;color:var(--faint)}
+.cell .u{font-size:11px;color:var(--faint);min-height:14px;letter-spacing:.03em}
+.cell .o{font-size:11px;color:var(--cool);min-height:14px;font-family:Menlo,Consolas,monospace}
+.cell.up{background:var(--paper);border-color:#cdbf9f;cursor:default}
+.cell.up .v{color:var(--paperink)}
+.cell.up .hr,.cell.up .u{color:#7d6f58}
+.cell.up .o{color:#2f6f66}
+.cell .bar{display:block;width:78%;height:5px;background:rgba(0,0,0,.12);border-radius:2px;overflow:hidden}
+.cell .bar i{display:block;height:100%;background:var(--faint)}
+.cell.up .bar i.a{background:var(--ember)}.cell.up .bar i.b{background:#b59a5e}.cell.up .bar i.c{background:#7d6f58}
+.cell.hit{outline:2px solid var(--ember);outline-offset:1px}
+.cell.found{outline:2px solid var(--sign);outline-offset:1px}
+.pick .cell.up{cursor:pointer}
+.pick .cell.up:hover{border-color:var(--ember)}
+.cell:focus-visible,.order:focus-visible,.btn:focus-visible{outline:2px solid var(--warm);outline-offset:2px}
+.low{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px}
+.order{background:var(--paper);color:var(--paperink);border:1px solid #cdbf9f;border-radius:3px;padding:12px 14px;text-align:left;cursor:pointer;width:100%;font-size:14px;line-height:1.5}
+.order h3{margin:0 0 4px;font-size:13px;letter-spacing:.2em;font-weight:400;color:#6b5d47}
+.order .rows{display:block;font-family:Menlo,Consolas,monospace;font-size:13px;margin-top:6px;white-space:pre-wrap}
+.order.laid{box-shadow:0 0 0 2px var(--cool)}
+.order .st{display:block;margin-top:6px;font-size:12px;color:#6b5d47;font-style:italic}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:12px 14px}
+.box h3{margin:0 0 8px;font-size:13px;letter-spacing:.2em;font-weight:400;color:var(--dim)}
+.entry{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px}
+.entry select{background:#120f0c;border:1px solid var(--line);padding:5px 6px;max-width:100%}
+.says{min-height:92px;font-size:14px}
+.says p{margin:0 0 6px;color:var(--dim)}
+.says p:last-child{color:var(--ink)}
+.record{background:var(--paper);color:var(--paperink);border-radius:3px;padding:12px 16px;min-height:74px;font-size:16px}
+.record h3{color:#6b5d47}
+.record p{margin:0 0 4px}
+.record p.two{font-size:15px;margin-left:18px}
+.record p.none{color:#8d7f68;font-style:italic;font-size:14px}
+.after{grid-column:1/-1;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:16px 20px;max-width:900px}
+.after p{margin:0 0 12px}
+.after p:last-child{margin:0}
+textarea{width:100%;min-height:110px;background:#120f0c;border:1px solid var(--line);padding:8px;font-family:Menlo,Consolas,monospace;font-size:13px;resize:vertical}
+aside{font-size:12px;color:var(--faint);border-left:1px solid var(--line);padding-left:14px;line-height:1.7}
+aside h3{margin:0 0 8px;font-size:11px;letter-spacing:.24em;font-weight:400;color:var(--faint)}
+aside dl{margin:0 0 14px}
+aside dt{float:left;clear:left;width:46px;font-family:Menlo,Consolas,monospace;color:var(--dim)}
+aside dd{margin:0 0 2px 50px}
+.pips{font-family:Menlo,Consolas,monospace;letter-spacing:.2em;color:var(--dim)}
+.q{color:var(--faint);min-height:20px}
+.hide{display:none}
+@media (max-width:860px){main{grid-template-columns:1fr}aside{border-left:0;border-top:1px solid var(--line);padding:12px 0 0}.low{grid-template-columns:1fr}.cell .v{font-size:19px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Knock Back<small>one night in a bakehouse, read at ten to four</small></h1>
+  <span class="run"><b>run</b><span id="rid">----</span></span>
+  <span class="again"><label for="rin">run-id</label><input id="rin" maxlength="6" autocomplete="off" spellcheck="false" aria-label="Run-id to replay, or leave empty"><button class="btn" id="go">Begin</button></span>
+</header>
+<main>
+  <p class="how"><b>The night baker has gone home. Three things kept count through the night.</b> Press a figure to turn it face up; you have five looks. Press the STANDING ORDER to lay it under the night, and again to lift it. Put your ink to one strip, once. Then enter what was done, and at what hour. The bake goes in at 4.</p>
+
+  <section class="board" id="board" aria-label="The night, hour by hour">
+    <div class="strip" id="s0">
+      <div class="shead"><h2>OVEN</h2><span class="tag" id="t0"></span><button class="btn" id="k0">Put ink to it</button></div>
+      <p class="card">Heat on the oven, read at the end of each hour. It starts the night at 1. A stoke lifts it 2. An hour unfed lets it fall 1, never under 0. A damp log burns and lifts nothing. The flue, turned to the cupboard, costs the oven 2 that hour.</p>
+      <div class="cells" id="c0"></div>
+    </div>
+    <div class="strip" id="s1">
+      <div class="shead"><h2>CUPBOARD</h2><span class="tag" id="t1"></span><button class="btn" id="k1">Put ink to it</button></div>
+      <p class="card">Dough against the stick, read at the end of each hour. It reads 1 the hour the batch is mixed. Each hour after, it climbs 1, or 2 if the oven ends that hour at 4 or more. A knock-back puts it at 1. The flue, turned this way, lends it 1 that hour.</p>
+      <div class="cells" id="c1"></div>
+    </div>
+    <div class="strip" id="s2">
+      <div class="shead"><h2>STORE</h2><span class="tag" id="t2"></span><button class="btn" id="k2">Put ink to it</button></div>
+      <p class="card">What is left, counted at the end of each hour. 8 logs and 9 flour at dusk. Every stoke takes a log, damp or dry. The batch takes 3 flour when it is mixed.</p>
+      <div class="cells" id="c2"></div>
+    </div>
+
+    <div class="low">
+      <button class="order" id="ord" aria-pressed="false">
+        <h3>STANDING ORDER</h3>
+        Mix at 10. Stoke at 11, 12, 1 and 2. Knock back at 1. Bake at 4.
+        <span class="rows">oven   0 2 4 6 8 7
+stick  1 2 4 1 3 5
+logs   8 7 6 5 4 4
+flour  6 6 6 6 6 6</span>
+        <span class="st" id="ost">Lying on the bench.</span>
+      </button>
+      <div class="box">
+        <h3>ENTER</h3>
+        <div class="entry">
+          <span>At</span>
+          <select id="eh" aria-label="Hour"></select>
+          <select id="ed" aria-label="What was done"></select>
+          <button class="btn hot" id="ent">Enter it</button>
+        </div>
+        <p class="q" id="eq"></p>
+      </div>
+    </div>
+
+    <div class="low">
+      <div class="record" id="rec" aria-live="polite"><h3 style="margin:0 0 6px;font-size:13px;letter-spacing:.2em;font-weight:400">RECORD</h3><p class="none">Nothing entered.</p></div>
+      <div class="box"><h3>THE BAKEHOUSE SAYS</h3><div class="says" id="says" aria-live="polite"></div></div>
+    </div>
+
+    <div class="box"><h3>SCRATCH (yours; nothing reads it)</h3><textarea id="scr" spellcheck="false" aria-label="Scratch space"></textarea></div>
+  </section>
+
+  <aside aria-label="Legend for a second pair of eyes">
+    <h3>LEGEND</h3>
+    <dl>
+      <dt>?</dt><dd>face down</dd>
+      <dt>7</dt><dd>face up</dd>
+      <dt>7 | 6</dt><dd>logs | flour</dd>
+      <dt>ord</dt><dd>the order, laid under</dd>
+      <dt>bar</dt><dd>how much: heat, dough, logs</dd>
+    </dl>
+    <div>looks <span class="pips" id="lp"></span></div>
+    <div>to the bake <span class="pips" id="dp"></span></div>
+    <div>ink <span class="pips" id="ip">-</span></div>
+    <div id="nt" class="q"></div>
+  </aside>
+
+  <section class="after hide" id="aft" aria-live="polite"></section>
+</main>
+
+<script>
+(function(){
+'use strict';
+var HRS=['10','11','12','1','2','3'];
+var SYS=['OVEN','CUPBOARD','STORE'];
+var ABC='23456789ABCDEFGHJKMNPQRSTVWXYZ';
+var DEEDS=[
+ ['flue','the flue was turned to the cupboard',[0,1,2,3,4,5]],
+ ['damp','a damp log was burned',[1,2,3,4]],
+ ['miss','an ordered stoke was missed',[1,2,3,4]],
+ ['extra','a stoke was made out of order',[0,5]],
+ ['late','the batch was mixed late, at this hour',[1,2]],
+ ['kmove','the knock-back was done at this hour instead',[2,4]],
+ ['kskip','the knock-back was not done',[3]]
+];
+/*core*/
+function night(d,w){
+  var mix=0,kn=3,st=[0,1,1,1,1,0],heat=1,logs=8,fl=9,D=0,out=[],h;
+  if(d){
+    if(d.k==='late')mix=d.h;
+    if(d.k==='kmove')kn=d.h;
+    if(d.k==='kskip')kn=-1;
+    if(d.k==='extra')st[d.h]=1;
+  }
+  for(h=0;h<6;h++){
+    var fed=st[h],at=d&&d.h===h?d.k:'';
+    if(at==='miss')fed=0;
+    if(fed)logs--;
+    var gain=fed?2:-1;
+    if(at==='damp')gain=0;
+    if(at==='flue')gain-=2;
+    heat=Math.max(0,heat+gain);
+    if(h===mix){fl-=3;D=1;}
+    else if(h>mix){ if(h===kn)D=1; else D+=heat>=4?2:1; }
+    if(at==='flue'&&h>=mix)D+=1;
+    var L=logs,F=fl,S=D;
+    if(w&&h>=w.h){ if(w.k===0)F--; if(w.k===1)L--; if(w.k===2)S--; }
+    out.push([heat,S,L,F]);
+  }
+  return out;
+}
+var NIGHTS=[
+ {d:{k:'flue',h:2},seats:[0,1,2],w:[1,4,4]},
+ {d:{k:'damp',h:3},seats:[0,1,2],w:[1,1,4]},
+ {d:{k:'miss',h:1},seats:[0,1],w:[2,3,4]},
+ {d:{k:'kmove',h:4},seats:[0,2],w:[1,2,5]},
+ {d:{k:'flue',h:0},seats:[0,2],w:[2,3,4]}
+];
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function deal(n){
+  var r=rng(n*7919+13),i=Math.floor(r()*NIGHTS.length),N=NIGHTS[i];
+  var seat=N.seats[Math.floor(r()*N.seats.length)],k=Math.floor(r()*3);
+  return {i:i,d:N.d,seat:seat,w:{k:k,h:N.w[k]}};
+}
+/*end*/
+function toId(n){var s='',i;for(i=0;i<4;i++){s=ABC[n%30]+s;n=Math.floor(n/30);}return s;}
+function fromId(s){var n=0,i,p;if(s.length!==4)return -1;for(i=0;i<4;i++){p=ABC.indexOf(s[i]);if(p<0)return -1;n=n*30+p;}return n;}
+
+var FIRST=[
+ ['By the oven: fed at 12, and no warmer for it.','By the cupboard: the dough stood at 4 at 12, as ordered.','By the store: a log was drawn for the 12 stoke, as ordered.'],
+ ['By the oven: fed at 1, and no warmer for it.','By the cupboard: knocked back at 1, as ordered, and climbing after.','By the store: a log was drawn for the 1 stoke, as ordered.'],
+ ['By the oven: as cold at 11 as it was at 10.','By the cupboard: the dough was slow to 12 and knocked back at 1.','By the store: no log was drawn for the 11 stoke.'],
+ ['By the oven: fed at each ordered hour, and warm to order.','By the cupboard: the dough stood on to 2 and was knocked back then.','By the store: a log was drawn for each ordered stoke.'],
+ ['By the oven: unfed at 10, as ordered, and cold.','By the cupboard: the dough ran ahead from 10 until the knock-back.','By the store: nothing was drawn at 10 but flour for the batch.']
+];
+var SECOND=['One loaf went out unbilled.','One log warmed another hearth.','A piece was kept for tomorrow.'];
+var TOLD=[
+ 'At 12 the fire was fed and the flue was turned to the cupboard. The oven paid 2 for it and never had them back: that is the whole of the shortfall you can read along the oven strip, hour after hour, down to the bake. The cupboard shows nothing because the trade was exact. With the oven held at 2 the dough would have climbed 1; the borrowed warmth lent it the other 1; the stick read 4, to order, and looked as if it had nothing to tell.',
+ 'At 1 a log left the store, went on the fire and gave nothing. It was damp. The store counted it as it counts any log, and the oven sat at 4 for a second hour. The cupboard could not have told you either way: 1 is the knock-back hour, and a knocked dough stands at 1 whatever the oven is doing. By 2 the oven was over 4 again and the stick climbed as though the hour before had been like any other.',
+ 'Nobody fed the fire at 11. The oven hid it, because an oven at 0 has nowhere to fall, and so 11 looked like one more cold hour. The store kept the log and said so plainly, to anyone who asked the store. The cupboard felt it an hour late: with the oven only at 2 at 12 the dough climbed 1, not 2, and stood a mark short until the knock-back wiped the stick clean.',
+ 'The fire was fed to the minute and the store paid for every stoke. The night went wrong in the one place neither of them can see. The knock-back ordered for 1 was done at 2. The dough stood at 6 when it should have been starting again, went back to 1 an hour late, and came to the bake well short of the 5 the order wants. Small bread, from a faultless fire.',
+ 'At 10, with the batch just mixed and the oven at nothing, the flue was turned to the cupboard. An oven at 0 has nothing to lose, so the oven strip never showed it, and no log was asked for it. The dough took the free warmth and ran a mark ahead for three hours. Then the knock-back at 1 took the lead away, and by the bake nothing of it was left on the stick to show.'
+];
+var OWED=[
+ 'That leaves the flour. From HR the bin was one short of what a single batch takes, and it stayed one short. It was a loaf, mixed small beside the batch and gone before the bake, and nobody was billed for it.',
+ 'That leaves the logs. From HR the stack was one short of what the fire had been given, and it stayed one short. No oven was warmer for that log. It went out of the bakehouse to another hearth, and nobody was billed for it.',
+ 'That leaves the stick. From HR the dough stood one under what the oven and the hours allow, and it stayed one under. A piece had been cut from the batch and kept back, to raise tomorrow\'s.'
+];
+
+var g=null,$=function(i){return document.getElementById(i);};
+function keep(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem(k)||'null');localStorage.setItem(k,JSON.stringify(v));}catch(e){}return null;}
+
+function say(t){var b=$('says'),p=document.createElement('p');p.textContent=t;b.appendChild(p);while(b.children.length>4)b.removeChild(b.firstChild);}
+function pips(n,of,ch){var s='',i;for(i=0;i<of;i++)s+=i<n?ch:'.';return s;}
+function val(s,h){var r=g.b[h];return s===0?''+r[0]:s===1?''+r[1]:r[2]+' | '+r[3];}
+function oval(s,h){var r=g.o[h];return s===0?''+r[0]:s===1?''+r[1]:r[2]+' | '+r[3];}
+
+function paint(){
+  var s,h,box,c;
+  for(s=0;s<3;s++){
+    box=$('c'+s);box.innerHTML='';
+    for(h=0;h<6;h++){
+      c=document.createElement('button');c.type='button';
+      var up=g.up[s][h];
+      c.className='cell'+(up?' up':'')+(g.hit===s+':'+h?' hit':'')+(g.found===s+':'+h?' found':'');
+      c.setAttribute('aria-label',SYS[s]+' at '+HRS[h]+(up?': '+val(s,h):': face down'));
+      c.innerHTML='<span class="hr">'+HRS[h]+'</span><span class="v">'+(up?val(s,h):'?')+'</span><span class="bar"><i class="'+'abc'[s]+'" style="width:'+(up?Math.min(100,Math.round(g.b[h][s]*100/(s===2?8:11))):0)+'%"></i></span><span class="o">'+(up&&g.laid?'ord '+oval(s,h):'')+'</span>';
+      c.onclick=(function(a,b){return function(){press(a,b);};})(s,h);
+      box.appendChild(c);
+    }
+    $('s'+s).className='strip'+(g.ink===s?' sgn':'');
+    $('t'+s).textContent=g.ink===s?'your ink':'';
+    $('k'+s).className='btn'+(g.ink===null&&!g.shut?'':' hide');
+  }
+  $('board').className='board'+(g.mode==='again'?' pick':'');
+  $('rid').textContent=g.id+(g.shut===2?"'":'');
+  $('lp').textContent=pips(g.looks,5,'o');
+  $('dp').textContent=pips(g.dawn,4,'o');
+  $('ip').textContent=g.ink===null?'-':'set';
+  $('nt').textContent=g.shut===2?'noted':'';
+  $('ord').className='order'+(g.laid?' laid':'');
+  $('ord').setAttribute('aria-pressed',g.laid?'true':'false');
+  $('ost').textContent=g.laid?'Laid under the night.':'Lying on the bench.';
+  $('ent').disabled=!!g.shut;$('eh').disabled=!!g.shut;$('ed').disabled=!!g.shut;
+  var r=$('rec'),t='<h3 style="margin:0 0 6px;font-size:13px;letter-spacing:.2em;font-weight:400">RECORD</h3>';
+  if(!g.shut)t+='<p class="none">Nothing entered.</p>';
+  else{t+='<p>'+FIRST[g.i][g.ink]+'</p>';if(g.shut===2)t+='<p class="two">'+SECOND[g.w.k]+'</p>';}
+  r.innerHTML=t;
+  var a=$('aft');
+  if(g.shut===2){
+    a.className='after';
+    var mine=g.ink===g.seat;
+    var p2=OWED[g.w.k].replace('HR',HRS[g.w.h])+' '+
+      (mine?'You put your ink to the '+SYS[g.ink]+', the strip that lay open on the bench when you came in. It did not lie to you. It answered what a '+SYS[g.ink].toLowerCase()+' can answer, and you swore to that much and no more.'
+           :'You put your ink to the '+SYS[g.ink]+', and left unsigned the strip that lay open on the bench when you came in. What you swore to was true. It was one strip of three, and it answered only what a '+SYS[g.ink].toLowerCase()+' can answer.')+
+      ' Two lines stand on the record now. The first was true before you looked again. So is the second.';
+    a.innerHTML='<p></p><p></p>';a.children[0].textContent=TOLD[g.i];a.children[1].textContent=p2;
+  }else a.className='after hide';
+}
+
+function fresh(n,id){
+  var x=deal(n),s,h;
+  g={n:n,id:id,i:x.i,d:x.d,seat:x.seat,w:x.w,b:night(x.d,x.w),o:night(null,null),up:[[],[],[]],looks:5,dawn:4,ink:null,laid:false,shut:0,mode:'',hit:'',found:'',tries:5,bare:false};
+  for(s=0;s<3;s++)for(h=0;h<6;h++)g.up[s][h]=s===g.seat;
+  $('says').innerHTML='';
+}
+function allUp(){var s,h;for(s=0;s<3;s++)for(h=0;h<6;h++)g.up[s][h]=true;}
+
+function begin(){
+  var raw=($('rin').value||'').toUpperCase().replace(/[^0-9A-Z]/g,''),n=fromId(raw),old=null;
+  if(n<0){n=Math.floor(Math.random()*810000);raw=toId(n);}else old=keep('kb9:'+raw);
+  fresh(n,raw);$('rin').value='';
+  if(old&&old.ink!==undefined&&old.ink!==null){
+    g.ink=old.ink;g.shut=old.two?2:1;g.bare=!!old.bare;g.tries=old.two?0:(old.tries===undefined?5:old.tries);g.looks=old.looks||0;g.dawn=old.dawn||0;
+    allUp();g.laid=true;
+    say('Run '+raw+', as it was left.');
+    say(g.shut===2?'Two lines on the record.':'One line on the record. The bake went in at 4.');
+  }else{
+    say('Ten to four. The '+SYS[g.seat].toLowerCase()+' strip is lying open on the bench. The other two are face down.');
+  }
+  paint();
+}
+
+function press(s,h){
+  if(g.mode==='again'){touch(s,h);return;}
+  if(g.shut||g.up[s][h])return;
+  if(g.looks<1){say('No looks left. Ink turns a whole strip. An entry that is wrong turns one figure against you.');return;}
+  g.looks--;g.up[s][h]=true;g.hit='';paint();
+}
+function ink(s){
+  if(g.ink!==null||g.shut)return;
+  g.ink=s;for(var h=0;h<6;h++)g.up[s][h]=true;
+  say('Your ink is on the '+SYS[s].toLowerCase()+' strip. It is turned full face up. It will not come off.');
+  paint();
+}
+function shut(bare){
+  g.shut=1;g.bare=bare;g.mode='';g.hit='';
+  keep('kb9:'+g.id,{ink:g.ink,two:false,bare:bare,tries:g.tries,looks:g.looks,dawn:g.dawn});
+  paint();
+}
+function enter(){
+  if(g.shut)return;
+  if(g.ink===null){say('The record takes an entry by a strip. Put your ink to one first.');return;}
+  var h=+$('eh').value,D=DEEDS[+$('ed').value];
+  if(D[2].indexOf(h)<0){
+    say(D[0]==='kskip'?'The knock-back is ordered for 1. If it was not done, it was not done at 1.':
+        D[0]==='miss'||D[0]==='damp'?'No stoke is ordered at '+HRS[h]+'. There was no log there to miss or to be damp.':
+        D[0]==='extra'?'A stoke is ordered at '+HRS[h]+' already. Out of order means 10 or 3.':
+        D[0]==='late'?'Late means 11 or 12. Later than that there is no bread by 4.':
+        'The knock-back is ordered for 1. Instead means 12 or 2.');
+    return;
+  }
+  if(D[0]===g.d.k&&h===g.d.h){
+    say('Entered: at '+HRS[h]+' '+D[1].replace(', at this hour','').replace(' at this hour instead',' instead')+'. Nothing on the bench speaks against it.');
+    say('The record takes it by the strip you signed. The bake goes in at 4. You can leave the bakehouse now.');
+    shut(false);return;
+  }
+  var t=night({k:D[0],h:h},g.w),best=null,bs=-1,s,x,sc,cols=[[0],[1],[2,3]],j,diff;
+  for(x=0;x<6;x++)for(s=0;s<3;s++){
+    diff=false;for(j=0;j<cols[s].length;j++)if(t[x][cols[s][j]]!==g.b[x][cols[s][j]])diff=true;
+    if(!diff)continue;
+    sc=(g.up[s][x]?10:0)+(s!==g.seat?3:0)+(s!==g.ink?1:0);
+    if(sc>bs){bs=sc;best=[s,x];}
+  }
+  g.dawn--;
+  if(best){
+    s=best[0];x=best[1];g.up[s][x]=true;g.hit=s+':'+x;
+    var want=s===0?t[x][0]:s===1?t[x][1]:t[x][2]+' | '+t[x][3];
+    say('Entered, and struck out. If that were so, the '+SYS[s]+' at '+HRS[x]+' would read '+want+'. It reads '+val(s,x)+'.');
+  }
+  if(g.dawn<1){
+    say('It is 4. The bake goes in without your entry. The record takes the plain reading of the strip you signed, and that much is true.');
+    shut(true);return;
+  }
+  paint();
+}
+function order(){
+  if(g.shut===1&&g.mode!=='again'&&g.tries>0){
+    allUp();g.laid=true;g.mode='again';
+    say('The order goes under the night once more, and every figure is face up. One of them is still not paid for. Touch it.');
+    paint();return;
+  }
+  if(g.mode==='again')return;
+  g.laid=!g.laid;paint();
+}
+function touch(s,h){
+  var ws=g.w.k===2?1:2,same=true,j,cols=[[0],[1],[2,3]];
+  g.hit='';
+  if(s===ws&&h===g.w.h){
+    g.shut=2;g.mode='';g.found=s+':'+h;
+    keep('kb9:'+g.id,{ink:g.ink,two:true,bare:g.bare,tries:0,looks:g.looks,dawn:g.dawn});
+    say('Not paid for by anything entered, and not to order. A second line goes under the first.');
+    paint();return;
+  }
+  for(j=0;j<cols[s].length;j++)if(g.b[h][cols[s][j]]!==g.o[h][cols[s][j]])same=false;
+  g.tries--;g.hit=s+':'+h;
+  keep('kb9:'+g.id,{ink:g.ink,two:false,bare:g.bare,tries:g.tries,looks:g.looks,dawn:g.dawn});
+  if(s===ws&&h>g.w.h)say('Owed here as well. But it did not begin at '+HRS[h]+'.');
+  else if(same)say(SYS[s]+' at '+HRS[h]+': to order. Nothing is owed here.');
+  else say(SYS[s]+' at '+HRS[h]+': paid for. '+(g.bare?'The one large deed of the night reaches this figure, though the record does not name it.':'What you entered reaches this figure.'));
+  if(g.tries<1){
+    g.mode='';
+    keep('kb9:'+g.id,{ink:g.ink,two:false,bare:g.bare,tries:0,looks:g.looks,dawn:g.dawn});
+    say('The bakehouse keeps the rest. One line stands on the record, and it is true.');
+  }
+  paint();
+}
+
+(function(){
+  var i,o;
+  for(i=0;i<6;i++){o=document.createElement('option');o.value=i;o.textContent=HRS[i];$('eh').appendChild(o);}
+  for(i=0;i<DEEDS.length;i++){o=document.createElement('option');o.value=i;o.textContent=DEEDS[i][1];$('ed').appendChild(o);}
+  $('go').onclick=begin;$('ent').onclick=enter;$('ord').onclick=order;
+  $('k0').onclick=function(){ink(0);};$('k1').onclick=function(){ink(1);};$('k2').onclick=function(){ink(2);};
+  $('rin').onkeydown=function(e){if(e.key==='Enter')begin();};
+  begin();
+})();
+})();
+</script>
+</body>
+</html>
